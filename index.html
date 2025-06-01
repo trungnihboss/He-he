@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trái tim Big Bang</title>
+  <title>Trái tim năng lượng</title>
   <style>
     html, body {
       margin: 0;
@@ -30,20 +30,20 @@
       h = canvas.height = window.innerHeight;
     });
 
-    // Tạo bầu trời sao
-    const stars = Array.from({ length: 300 }, () => ({
+    // Ít sao hơn (50 thay vì 300)
+    const stars = Array.from({ length: 50 }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
       r: Math.random() * 1.5,
       a: Math.random() * 360
     }));
 
-    // Hiệu ứng tia năng lượng hình trái tim
+    // Trái tim
     const energyParticles = [];
     const explosionParticles = [];
     const heart = [];
 
-    function generateHeartPoints(scale = 10, count = 100) {
+    function generateHeartPoints(scale = 10, count = 150) {
       const points = [];
       for (let i = 0; i < count; i++) {
         const t = (Math.PI * 2 * i) / count;
@@ -54,14 +54,14 @@
       return points;
     }
 
-    heart.push(...generateHeartPoints(10, 200));
+    heart.push(...generateHeartPoints(12, 300));
 
     for (let i = 0; i < heart.length; i++) {
       energyParticles.push({
         angle: Math.random() * Math.PI * 2,
-        radius: Math.random() * 2,
+        radius: Math.random() * 5 + 1,
         base: heart[i],
-        scale: 0.1 + Math.random() * 0.3
+        scale: 0.3 + Math.random() * 0.5
       });
     }
 
@@ -69,9 +69,11 @@
     let exploded = false;
 
     function animate() {
-      ctx.clearRect(0, 0, w, h);
+      // Tạo hiệu ứng "chồng lớp" như vẽ bằng ánh sáng
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, w, h);
 
-      // Vẽ bầu trời sao
+      // Vẽ sao
       ctx.fillStyle = 'white';
       for (let star of stars) {
         star.a += 0.01;
@@ -82,33 +84,35 @@
         ctx.fill();
       }
 
-      // Dao động năng lượng
       ctx.save();
       ctx.translate(w / 2, h / 2);
+
       if (time < 10000) {
+        // Vẽ trái tim năng lượng dao động
         for (let p of energyParticles) {
-          const pulse = Math.sin(time * 0.005 + p.base.x * 0.01) * 5;
-          const x = p.base.x + Math.cos(p.angle + time * 0.002) * (p.radius + pulse);
-          const y = p.base.y + Math.sin(p.angle + time * 0.002) * (p.radius + pulse);
-          ctx.fillStyle = 'rgba(255, 0, 255, 0.7)';
+          const pulse = Math.sin(time * 0.008 + p.base.x * 0.01) * 5;
+          const x = p.base.x + Math.cos(p.angle + time * 0.004) * (p.radius + pulse);
+          const y = p.base.y + Math.sin(p.angle + time * 0.004) * (p.radius + pulse);
+          ctx.fillStyle = 'rgba(255, 0, 50, 0.8)';
           ctx.beginPath();
-          ctx.arc(x, y, 2 * p.scale, 0, Math.PI * 2);
+          ctx.arc(x, y, 2.5 * p.scale, 0, Math.PI * 2);
           ctx.fill();
         }
       } else if (!exploded) {
-        // Phát nổ Big Bang
+        // Bắt đầu vụ nổ
         for (let p of energyParticles) {
           explosionParticles.push({
             x: p.base.x / 10,
             y: p.base.y / 10,
-            vx: (Math.random() - 0.5) * 10,
-            vy: (Math.random() - 0.5) * 10,
+            vx: (Math.random() - 0.5) * 15,
+            vy: (Math.random() - 0.5) * 15,
             life: 0,
             color: `hsl(${Math.random() * 360}, 100%, 70%)`
           });
         }
         exploded = true;
       } else {
+        // Hiệu ứng nổ Big Bang
         for (let i = 0; i < explosionParticles.length; i++) {
           const p = explosionParticles[i];
           p.x += p.vx;
@@ -116,12 +120,12 @@
           p.life += 1;
           ctx.fillStyle = p.color;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, Math.max(0, 3 - p.life * 0.05), 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, Math.max(0, 4 - p.life * 0.08), 0, Math.PI * 2);
           ctx.fill();
         }
       }
-      ctx.restore();
 
+      ctx.restore();
       time += 16;
       requestAnimationFrame(animate);
     }
