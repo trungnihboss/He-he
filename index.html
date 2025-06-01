@@ -58,7 +58,7 @@
     const explosionParticles = [];
     const heart = [];
 
-    function generateHeartPoints(scale = 10, count = 400) {
+    function generateHeartPoints(scale = 13, count = 400) {
       const points = [];
       for (let i = 0; i < count; i++) {
         const t = (Math.PI * 2 * i) / count;
@@ -69,7 +69,7 @@
       return points;
     }
 
-    heart.push(...generateHeartPoints(13, 400));
+    heart.push(...generateHeartPoints());
 
     for (let i = 0; i < heart.length; i++) {
       energyParticles.push({
@@ -80,11 +80,25 @@
       });
     }
 
-    const innerHearts = [
-      { baseX: -60, baseY: 180, scale: 0.5, offset: Math.random() * 1000 },
-      { baseX: 0, baseY: 180, scale: 0.5, offset: Math.random() * 1000 },
-      { baseX: 60, baseY: 180, scale: 0.5, offset: Math.random() * 1000 }
-    ];
+    function pointInHeart(x, y, scale = 13) {
+      x /= scale;
+      y /= scale;
+      return Math.pow(x*x + y*y - 1, 3) - x*x*y*y*y < 0;
+    }
+
+    const innerHearts = [];
+    while (innerHearts.length < 3) {
+      const x = (Math.random() - 0.5) * 26 * 13;
+      const y = (Math.random() - 0.25) * 26 * 13;
+      if (pointInHeart(x, y)) {
+        innerHearts.push({
+          baseX: x,
+          baseY: y,
+          scale: 0.5,
+          offset: Math.random() * 1000
+        });
+      }
+    }
 
     let time = 0;
     let exploded = false;
@@ -128,7 +142,7 @@
       ctx.save();
       ctx.translate(w / 2, h / 2);
 
-      // Trái tim nhỏ dao động trong trái tim lớn
+      // Trái tim nhỏ bên trong trái tim lớn
       if (time < 10000) {
         for (let i = 0; i < innerHearts.length; i++) {
           const hrt = innerHearts[i];
