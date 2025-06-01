@@ -80,6 +80,12 @@
       });
     }
 
+    const innerHearts = [
+      { baseX: -60, baseY: 180, scale: 0.5, offset: Math.random() * 1000 },
+      { baseX: 0, baseY: 180, scale: 0.5, offset: Math.random() * 1000 },
+      { baseX: 60, baseY: 180, scale: 0.5, offset: Math.random() * 1000 }
+    ];
+
     let time = 0;
     let exploded = false;
     let showName = false;
@@ -122,15 +128,17 @@
       ctx.save();
       ctx.translate(w / 2, h / 2);
 
-      // 3 trái tim nhỏ bên dưới trái tim lớn
+      // Trái tim nhỏ dao động trong trái tim lớn
       if (time < 10000) {
-        const offsetY = 180; // vị trí dưới trái tim
-        const offsetX = 0;
-        for (let i = -1; i <= 1; i++) {
-          drawHeartShape(i * 60 + offsetX, offsetY, 0.5, 0.7);
+        for (let i = 0; i < innerHearts.length; i++) {
+          const hrt = innerHearts[i];
+          const offsetX = Math.sin((time + hrt.offset) * 0.005) * 10;
+          const offsetY = Math.cos((time + hrt.offset) * 0.005) * 5;
+          drawHeartShape(hrt.baseX + offsetX, hrt.baseY + offsetY, hrt.scale, 0.8);
         }
       }
 
+      // Năng lượng dao động
       if (time < 10000) {
         for (let p of energyParticles) {
           const pulse = Math.sin(time * 0.006 + p.base.x * 0.02) * 10;
@@ -191,7 +199,7 @@
 
       ctx.restore();
 
-      // Trái tim nhỏ sau khi chữ phân tán
+      // Trái tim nhỏ bay ra từ chữ
       if (heartsSpawned) {
         for (let i = 0; i < smallHearts.length; i++) {
           const hrt = smallHearts[i];
