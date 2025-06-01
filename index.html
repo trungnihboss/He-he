@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Trái tim - Trần Anh Thư</title>
+  <title>Trái tim năng lượng - Trần Anh Thư</title>
   <style>
     html, body {
       width: 100%;
       height: 100%;
       margin: 0;
+      padding: 0;
       background: #000;
       overflow: hidden;
-    }
-    #heartCanvas {
-      position: absolute;
-      top: 0; left: 0;
     }
     #explosionText {
       position: absolute;
@@ -21,14 +18,14 @@
       left: 50%;
       transform: translate(-50%, -50%) scale(1);
       font-size: 4rem;
-      color: #ff66cc;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      text-shadow: 0 0 16px #ff99cc, 0 0 32px #fff;
+      font-family: 'Segoe UI', sans-serif;
+      color: #ff90d0;
+      text-shadow: 0 0 24px #ff8cd8, 0 0 48px #ff8cd8;
       opacity: 1;
       pointer-events: none;
-      transition: opacity 0.5s, transform 0.5s;
       z-index: 10;
       user-select: none;
+      transition: opacity 0.6s;
     }
   </style>
 </head>
@@ -42,89 +39,119 @@ let w = window.innerWidth, h = window.innerHeight;
 canvas.width = w;
 canvas.height = h;
 
-let hearts = [];
-
-function heartShape(t) {
-  const x = 16 * Math.pow(Math.sin(t), 3);
-  const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-  return { x, y };
+function heart(t, scale = 1, center = {x: w/2, y: h/2}) {
+  let x = 16 * Math.pow(Math.sin(t), 3);
+  let y = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+  return {
+    x: center.x + scale * x * 23,
+    y: center.y - scale * y * 23
+  };
 }
 
-function createHearts(centerX, centerY) {
-  hearts = [];
+function drawEnergyHeart(time) {
+  let baseScale = 1.03 + 0.05 * Math.sin(time * 1.5);
+  for (let l = 0; l < 10; l++) {
+    let alpha = 0.2 + 0.1 * Math.sin(time * 1.5 + l);
+    let offset = Math.sin(time * 0.5 + l) * 0.04;
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i <= 400; i++) {
+      let t = (i / 400) * 2 * Math.PI;
+      let scale = baseScale + offset + 0.1 * Math.sin(time * 2 + t * 8 + l);
+      let p = heart(t, scale);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.shadowBlur = 40 + 20 * l;
+    ctx.shadowColor = `rgba(255, 100, 180, 0.9)`;
+    ctx.strokeStyle = `rgba(255, ${100 + l * 15}, ${180 + l * 10}, ${alpha})`;
+    ctx.lineWidth = 4.5 - l * 0.3;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+let particles = [];
+function createHeartParticles() {
+  const textDiv = document.getElementById("explosionText");
+  const rect = textDiv.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+
   for (let i = 0; i < 30; i++) {
-    const angle = Math.random() * 2 * Math.PI;
-    const speed = 3 + Math.random() * 4;
-    const color = `hsl(${Math.random() * 360}, 100%, 70%)`;
-    hearts.push({
-      x: centerX,
-      y: centerY,
+    let angle = Math.random() * 2 * Math.PI;
+    let speed = 6 + Math.random() * 6;
+    particles.push({
+      x: cx,
+      y: cy,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
+      alpha: 1,
       trail: [],
-      color,
-      life: 180
+      size: 20 + Math.random() * 10,
+      color: `hsl(${330 + Math.random() * 40}, 100%, 70%)`
     });
   }
 }
 
-function drawHeart(x, y, scale, color) {
+function drawHeart(x, y, size, color, alpha) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(scale, scale);
+  ctx.scale(size / 30, size / 30);
   ctx.beginPath();
   for (let t = 0; t <= Math.PI * 2; t += 0.1) {
-    const p = heartShape(t);
-    if (t === 0) ctx.moveTo(p.x, -p.y);
-    else ctx.lineTo(p.x, -p.y);
+    let px = 16 * Math.pow(Math.sin(t), 3);
+    let py = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+    if (t === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
   ctx.closePath();
+  ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
-  ctx.shadowBlur = 20;
   ctx.shadowColor = color;
+  ctx.shadowBlur = 12;
   ctx.fill();
   ctx.restore();
 }
 
-function animate() {
+function animate(time) {
   ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
   ctx.fillRect(0, 0, w, h);
 
-  for (let h of hearts) {
-    h.trail.push({ x: h.x, y: h.y });
-    if (h.trail.length > 10) h.trail.shift();
+  if (time < 1000) drawEnergyHeart(time * 0.001);
 
-    h.x += h.vx;
-    h.y += h.vy;
-    h.life--;
-
-    for (let i = 0; i < h.trail.length; i++) {
-      const t = h.trail[i];
-      drawHeart(t.x, t.y, 0.08 * (i + 1) / h.trail.length, h.color);
-    }
-    drawHeart(h.x, h.y, 0.3, h.color);
+  for (let p of particles) {
+    p.trail.push({x: p.x, y: p.y, alpha: p.alpha});
+    if (p.trail.length > 10) p.trail.shift();
+    p.x += p.vx;
+    p.y += p.vy;
+    p.alpha -= 0.01;
   }
-  hearts = hearts.filter(h => h.life > 0);
+  particles = particles.filter(p => p.alpha > 0);
+
+  for (let p of particles) {
+    for (let t of p.trail) {
+      drawHeart(t.x, t.y, p.size, p.color, t.alpha * 0.5);
+    }
+    drawHeart(p.x, p.y, p.size, p.color, p.alpha);
+  }
+
   requestAnimationFrame(animate);
 }
 
+requestAnimationFrame(animate);
+
 setTimeout(() => {
-  const textDiv = document.getElementById("explosionText");
-  const rect = textDiv.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  textDiv.style.opacity = 0;
-  createHearts(centerX, centerY);
+  document.getElementById("explosionText").style.opacity = 0;
+  createHeartParticles();
 }, 1000);
 
-window.addEventListener("resize", () => {
+window.addEventListener('resize', () => {
   w = window.innerWidth;
   h = window.innerHeight;
   canvas.width = w;
   canvas.height = h;
 });
-
-animate();
 </script>
 </body>
 </html>
